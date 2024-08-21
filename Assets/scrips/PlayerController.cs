@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour
 {
     public float walkSpeed = 5f;
     public float runSpeed = 8f;
+    public float airWalkSpeed = 3f;
     public float jumpImpulse = 10f;
 
     Vector2 moveInput;
@@ -16,22 +17,41 @@ public class PlayerController : MonoBehaviour
     public float currentMoveSpeed 
     { get
         {
-            if (IsMoving)
+            if (CanMove)
             {
-                if (IsRunning)
+                if (IsMoving && !touchingDirections.IsOnWall)
                 {
-                    return runSpeed;
+                    if (touchingDirections.IsGrounded)
+                    {
+                        if (IsRunning)
+                        {
+                            return runSpeed;
+                        }
+                        else
+                        {
+                            return walkSpeed;
+                        }
+                    }
+                    else
+                    {
+                        //air move
+                        return airWalkSpeed;
+                    }
+
+
                 }
                 else
                 {
-                    return walkSpeed;
+                    //idle speed is 0
+                    return 0;
                 }
             }
             else
             {
-                //idle speed is 0
+                //movement locked
                 return 0;
             }
+           
         } 
     }
 
@@ -84,9 +104,14 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public bool CanMove {  get
+        {
+            return animator.GetBool(AnimationStrings.canMove);
+        } }
+
     Rigidbody2D rb;
     Animator animator;
-  
+
 
     private void Awake()
     {
@@ -153,19 +178,29 @@ public class PlayerController : MonoBehaviour
     public void OnJump(InputAction.CallbackContext context)
     {
         // todo check if aliva as well
-        if (context.started && touchingDirections.IsGrounded)
+        if (context.started && touchingDirections.IsGrounded && CanMove)
         {
-            animator.SetTrigger(AnimationStrings.jump);
+            animator.SetTrigger(AnimationStrings.jumpTrigger);
             rb.velocity = new Vector2(rb.velocity.x, jumpImpulse);
+            if(currentMoveSpeed >= 5)
+            {
+                airWalkSpeed = currentMoveSpeed;
+            }
+          
         }
         else if (context.canceled)
         {
-
+           
         }
     }
 
-    void OnAttack()
+    public void OnAttack(InputAction.CallbackContext context)
     {
-
+        if (context.started)
+        {
+            animator.SetTrigger(AnimationStrings.attackTrigger);
+            
+        }
+        
     }
 }
